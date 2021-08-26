@@ -6,7 +6,7 @@ const collectParams = (req, res, next) => {
   const { urlId = null } = req.params;
   const { useId = null } = req.params;
   if (useId === null) {
-    return pathNotFound(req, res, next);
+    pathNotFound(req, res, next);
   }
   res.locals.urlId = Number(urlId);
   res.locals.useId = Number(useId);
@@ -25,22 +25,44 @@ const paramsExist = (req, res, next) => {
       res.locals.urlUses = uses.filter((use) => use.urlId === res.locals.urlId);
   }
   if (!foundUse) {
-    return pathNotFound(req, res, next);
+    pathNotFound(req, res, next);
   }
   res.locals.use = foundUse;
   next();
 };
 
-function list(req, res) {
-  if (res.locals.urlUses) {
-    res.status(200).json({ data: res.locals.urlUses });
+const listLogic = (req, res, next) => {
+  const { urlId = null } = req.params;
+
+  if (urlId) {
+    const existentUrl = urls.find((url) => url.id == urlId);
+    if (!existentUrl)
+      next({
+        status: 404,
+        message: `urlId ${urlId} does not exist in the database`,
+      });
+    res.locals.url = existentUrl;
+    const usesObj = uses.find((use) => use.urlId == urlId);
+    const availUseId = uses.reduce((id, use) => use.id, 0) + 1;
+    const newUse = { id: availUseId, urlId: urlId, time: Date.now() };
+    if (!usesObj) uses.push(newUse);
+    res.locals.uses = uses.filter((use) => use.urlId == urlId);
   }
-  res.status(200).json({ data: uses });
+  next();
+};
+
+function list(req, res) {
+  const { urlId = null } = req.params;
+
+  if (urlId) {
+    const usesArr = res.locals.uses;
+    res.status(200).json({ data: usesArr });
+  } else {
+    res.status(200).json({ data: uses });
+  }
 }
 
 function read(req, res) {
-  if (res.locals.urlUses) {
-  }
   res.status(200).json({ data: res.locals.use });
 }
 
@@ -53,5 +75,5 @@ function destroy(req, res) {
 module.exports = {
   read: [collectParams, paramsExist, read],
   delete: [collectParams, paramsExist, destroy],
-  list,
+  list: [listLogic, list],
 };
