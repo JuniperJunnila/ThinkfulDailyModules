@@ -13,18 +13,20 @@ async function postExists(req, res, next) {
 }
 
 async function create(req, res) {
-  // your solution here
-  res.json({ data: "" });
+  const nPData = req.body.data
+  const newPost = await service.create(nPData)
+  res.status(201).json({ data: newPost });
 }
 
 async function update(req, res) {
-  // your solution here
-  res.json({ data: "" });
+  const nPData = req.body.data
+  const updatedPost = await service.update(nPData)
+  res.json({ data: updatedPost });
 }
 
 async function destroy(req, res) {
-  // your solution here
-  res.json({ data: "" });
+  await service.delete(res.locals.post.post_id)
+  res.sendStatus(204);
 }
 
 module.exports = {
